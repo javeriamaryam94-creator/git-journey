@@ -1,4 +1,7 @@
 hello world
 4
 4
+<<<<<<< HEAD
 4
+=======
+>>>>>>> staging
