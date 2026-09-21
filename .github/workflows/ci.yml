@@ -1,21 +1,9 @@
 name: "Terraform CI / Validation & Security"
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-
-jobs:
-  validate:
-    name: "Lint, Validate & Security Scan"
-    runs-on: ubuntu-latest
-
-    steps:
-
-cat << 'EOF' > .github/workflows/ci.yml
-name: "Terraform CI / Validation & Security"
-
-on:
   pull_request:
     branches:
       - main
