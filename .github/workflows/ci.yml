@@ -1,0 +1,55 @@
+name: "Terraform CI / Validation & Security"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: "Lint, Validate & Security Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+
+cat << 'EOF' > .github/workflows/ci.yml
+name: "Terraform CI / Validation & Security"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: "Lint, Validate & Security Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Initialize Module Example
+        run: |
+          cd examples/basic-storage
+          terraform init -backend=false
+
+      - name: Validate Module Syntax
+        run: |
+          cd examples/basic-storage
+          terraform validate
+
+      - name: Run Security Scan (Checkov)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform
+          output_format: cli
+          soft_fail: true
