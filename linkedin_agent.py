@@ -66,10 +66,16 @@ def run_linkedin_outreach(profile_urls):
                 print(f" -> Error interacting with {url}: {e}")
 
         browser.close()
-
 if __name__ == "__main__":
     # Add your target LinkedIn profile URLs here
     target_leads = [
-        "https://www.linkedin.com/in/example-buyer-profile/"
+        "https://www.linkedin.com/company/zaynvc/",
+        "https://www.linkedin.com/company/indusvalleycap",
+        "https://www.linkedin.com/company/sarmayacar/",
+        "https://pk.linkedin.com/company/fatima-gobi-ventures",
+        "https://pk.linkedin.com/company/i2i-ventures"
+    ]
+    run_linkedin_outreach(target_leads)
+
     ]
     # run_linkedin_outreach(target_leads)
