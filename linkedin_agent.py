@@ -87,29 +87,39 @@ def run_linkedin_outreach_and_messaging(profile_urls):
         time.sleep(5)
 
         try:
-            # Select the first unread conversation (or top conversation)
+            # Select the first conversation in the list
             first_conv = page.locator(".msg-conversation-listitem").first
             if first_conv.is_visible():
                 first_conv.click()
                 time.sleep(3)
 
-                # Get the latest message from the chat history
-                messages = page.locator(".msg-s-event-listitem__body").all_text_contents()
-                if messages:
-                    latest_incoming = messages[-1]
-                    print(f"Latest buyer message detected: '{latest_incoming}'")
+                # Check if the last message has a badge or class indicating it's sent BY YOU
+                # LinkedIn outgoing messages typically contain 'msg-s-event--currentUser'
+                last_msg_item = page.locator(".msg-s-event-listitem").last
+                
+                if last_msg_item.is_visible():
+                    classes = last_msg_item.get_attribute("class") or ""
+                    
+                    if "msg-s-event--currentUser" in classes:
+                        print(" -> Last message was sent by YOU. Skipping auto-reply to avoid replying to yourself.")
+                    else:
+                        # It's an incoming message from the lead!
+                        latest_incoming = last_msg_item.locator(".msg-s-event-listitem__body").inner_text()
+                        print(f"Latest buyer message detected: '{latest_incoming}'")
 
-                    # Generate AI response
-                    ai_response = generate_reply(latest_incoming)
-                    print(f"Generated AI Reply: '{ai_response}'")
+                        # Generate AI response
+                        ai_response = generate_reply(latest_incoming)
+                        print(f"Generated AI Reply: '{ai_response}'")
 
-                    # Type and send reply in messaging box
-                    msg_box = page.locator("div.msg-form__contenteditable")
-                    if msg_box.is_visible():
-                        msg_box.fill(ai_response)
-                        time.sleep(1)
-                        page.locator("button.msg-form__send-button").click()
-                        print(" -> Automated reply successfully sent to buyer!")
+                        # Type and send reply in messaging box
+                        msg_box = page.locator("div.msg-form__contenteditable")
+                        if msg_box.is_visible():
+                            msg_box.fill(ai_response)
+                            time.sleep(1)
+                            page.locator("button.msg-form__send-button").click()
+                            print(" -> Automated reply successfully sent to buyer!")
+                else:
+                    print("No messages found in the active conversation.")
             else:
                 print("No active conversations found in inbox.")
         except Exception as e:
