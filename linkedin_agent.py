@@ -31,7 +31,7 @@ def run_linkedin_outreach(profile_urls):
         print("Please log into your LinkedIn account in the opened browser window...")
         
         # Wait until user is logged in (detects feed URL)
-        page.wait_for_url("**/feed/**", timeout=60000)
+        page.wait_for_url("**/feed/**", timeout=180000)
         print("Login detected! Starting outreach sequence...")
 
         for url in profile_urls:
