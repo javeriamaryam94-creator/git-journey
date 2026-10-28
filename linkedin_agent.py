@@ -68,9 +68,12 @@ def run_linkedin_outreach_and_messaging(profile_urls):
                     if msg_box.is_visible():
                         pitch_prompt = "Write a short, polite 2-sentence B2B sales message pitching bulk Himalayan salt and spices exports."
                         pitch_text = model.generate_content(pitch_prompt).text.strip()
-                        msg_box.fill(pitch_text)
-                        time.sleep(1)
-                        page.locator("button.msg-form__send-button").click()
+                     msg_box.fill(pitch_text)
+                     time.sleep(1)
+                    try:
+                      page.locator("button.msg-form__send-button").click(force=True)
+except:
+    msg_box.press("Enter")
                         print(f" -> Direct pitch message sent to {url}")
                 elif follow_btn.is_visible():
                     follow_btn.click()
