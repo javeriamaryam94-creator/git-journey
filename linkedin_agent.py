@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 
 # Configure Gemini AI
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 def generate_reply(incoming_message, guidelines="Emphasize high-grade pink salt and spice bulk exports, FOB/CIF terms, and professional responsiveness."):
     prompt = f"""
