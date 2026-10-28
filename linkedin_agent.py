@@ -100,9 +100,12 @@ def run_linkedin_outreach_and_messaging(profile_urls):
         browser.close()
 
 if __name__ == "__main__":
-    # Swap these out for individual founder/investor profile URLs to test connection notes
     target_leads = [
-        # Example format: "https://www.linkedin.com/in/username/"
+        "https://www.linkedin.com/company/zaynvc/",
+        "https://www.linkedin.com/company/indusvalleycap",
+        "https://www.linkedin.com/company/sarmayacar/",
+        "https://pk.linkedin.com/company/fatima-gobi-ventures",
+        "https://pk.linkedin.com/company/i2i-ventures"
     ]
     run_linkedin_outreach_and_messaging(target_leads)
     # run_linkedin_outreach(target_leads)
