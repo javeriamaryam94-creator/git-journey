@@ -37,7 +37,7 @@ def run_linkedin_outreach(profile_urls):
         for url in profile_urls:
             try:
                 print(f"Visiting profile: {url}")
-                page.goto(url)
+                page.goto(url, timeout=60000)
                 time.sleep(3) # Wait for page load
                 
                 # Attempt to find and click the Connect button
