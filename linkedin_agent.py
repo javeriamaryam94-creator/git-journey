@@ -76,5 +76,5 @@ if __name__ == "__main__":
         "https://pk.linkedin.com/company/i2i-ventures"
     ]
     run_linkedin_outreach(target_leads)
-    ]
+    
     # run_linkedin_outreach(target_leads)
