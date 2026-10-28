@@ -38,13 +38,16 @@ def run_linkedin_outreach_and_messaging(profile_urls):
                 page.goto(url, timeout=60000)
                 time.sleep(3) # Wait for page load
                 
-                # Attempt to find and click the Connect button
+                # Check for Connect button first
                 connect_btn = page.locator("button:has-text('Connect')").first
+                message_btn = page.locator("button:has-text('Message')").first
+                follow_btn = page.locator("button:has-text('Follow')").first
+
                 if connect_btn.is_visible():
                     connect_btn.click()
                     time.sleep(1)
                     
-                    # Click 'Add a note' and send personalized pitch via Gemini
+                    # Click 'Add a note' if available
                     add_note_btn = page.locator("button:has-text('Add a note')")
                     if add_note_btn.is_visible():
                         add_note_btn.click()
@@ -54,14 +57,30 @@ def run_linkedin_outreach_and_messaging(profile_urls):
                         
                         page.locator("textarea[name='message']").fill(note_text)
                         page.locator("button:has-text('Send')").click()
-                        print(f" -> Connection invite sent with personalized note to {url}")
+                        print(f" -> Connection invite sent with note to {url}")
+                elif message_btn.is_visible():
+                    message_btn.click()
+                    time.sleep(2)
+                    print(f" -> Opened direct message window for {url}")
+                    
+                    # Optional: Send direct pitch if message box opens
+                    msg_box = page.locator("div.msg-form__contenteditable")
+                    if msg_box.is_visible():
+                        pitch_prompt = "Write a short, polite 2-sentence B2B sales message pitching bulk Himalayan salt and spices exports."
+                        pitch_text = model.generate_content(pitch_prompt).text.strip()
+                        msg_box.fill(pitch_text)
+                        time.sleep(1)
+                        page.locator("button.msg-form__send-button").click()
+                        print(f" -> Direct pitch message sent to {url}")
+                elif follow_btn.is_visible():
+                    follow_btn.click()
+                    print(f" -> Clicked Follow for {url}")
                 else:
-                    print(f" -> Connect button not directly visible on {url} (already connected or requires Follow)")
+                    print(f" -> No direct action button found on {url}")
                 
                 time.sleep(10) # Human-like delay
             except Exception as e:
                 print(f" -> Error interacting with {url}: {e}")
-
         # --- PART 2: CHECK INBOX & AUTO-REPLY TO BUYERS ---
         print("\nNavigating to LinkedIn Messaging to check for incoming inquiries...")
         page.goto("https://www.linkedin.com/messaging/", timeout=60000)
