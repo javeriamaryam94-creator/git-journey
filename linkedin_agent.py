@@ -1,21 +1,67 @@
 import os
 import time
 import google.generativeai as genai
-# import anthropic  # Uncomment if using Anthropic/Claude SDK
+import anthropic
+import requests
 from playwright.sync_api import sync_playwright
 
-# Configure API Keys for Multiple Models
+# --- API KEY CONFIGURATION ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") # Optional for Claude
-QWEN_API_KEY = os.environ.get("QWEN_API_KEY")         # Optional for Qwen via OpenRouter/DashScope
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY") # Used for Qwen & Arena consensus
 
 genai.configure(api_key=GEMINI_API_KEY)
 gemini_model = genai.GenerativeModel("gemini-3.8-flash")
 
-def generate_multi_model_pitch(profile_name, profile_headline, model_choice="gemini"):
+def get_claude_pitch(prompt):
+    if not ANTHROPIC_API_KEY:
+        return None
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=250,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return message.content[0].text.strip()
+    except Exception as e:
+        print(f" -> Claude API Error: {e}")
+        return None
+
+def get_qwen_pitch(prompt):
+    if not OPENROUTER_API_KEY:
+        return None
+    try:
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "qwen/qwen-2.5-72b-instruct",
+                "messages": [{"role": "user", "content": prompt}]
+            }
+        )
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print(f" -> Qwen API Error: {e}")
+        return None
+
+def get_gemini_pitch(prompt):
+    try:
+        response = gemini_model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f" -> Gemini API Error: {e}")
+        return None
+
+def generate_arena_team_pitch(profile_name, profile_headline):
     """
-    Generates a personalized B2B export pitch allowing you to switch 
-    between Gemini, Claude, or Qwen dynamically.
+    Acts as an Arena Orchestrator: Asks Gemini, Claude, and Qwen to draft 
+    the pitch independently, then uses Gemini to judge/synthesize the absolute 
+    best, most professional human-like response.
     """
     prompt = f"""
     You are Hasham, Founder of HESHI Salt and Spices, an export company specializing in certified, premium-grade Himalayan pink salt and pure bulk spices.
@@ -31,24 +77,33 @@ def generate_multi_model_pitch(profile_name, profile_headline, model_choice="gem
     - Sign off cleanly as Hasham, Founder of HESHI Salt and Spices.
     """
     
-    if model_choice == "gemini":
-        response = gemini_model.generate_content(prompt)
-        return response.text.strip()
+    print(" -> Summoning AI Team (Gemini, Claude, Qwen)...")
     
-    elif model_choice == "claude":
-        # Example integration for Claude (Anthropic SDK)
-        # client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-        # message = client.messages.create(model="claude-3-5-sonnet-20241022", max_tokens=300, messages=[{"role": "user", "content": prompt}])
-        # return message.content[0].text.strip()
-        pass
-        
-    elif model_choice == "qwen":
-        # Example integration for Qwen (via OpenAI-compatible client or OpenRouter)
-        pass
-        
-    # Default fallback to Gemini
-    response = gemini_model.generate_content(prompt)
-    return response.text.strip()
+    # Gather drafts from available models
+    gemini_draft = get_gemini_pitch(prompt)
+    claude_draft = get_claude_pitch(prompt)
+    qwen_draft = get_qwen_pitch(prompt)
+    
+    valid_drafts = [d for d in [gemini_draft, claude_draft, qwen_draft] if d]
+    
+    if not valid_drafts:
+        return "Hi " + profile_name + ", reaching out from HESHI Salt and Spices regarding premium Himalayan pink salt exports. Best, Hasham"
+
+    if len(valid_drafts) == 1:
+        return valid_drafts[0]
+
+    # Arena Consensus / Judge Step: Have Gemini review the drafts and pick or refine the best one
+    arena_judge_prompt = f"""
+    You are an expert chief communications officer reviewing B2B outreach drafts written by top AI models (Gemini, Claude, Qwen) for Hasham, Founder of HESHI Salt and Spices.
+    
+    Candidate Drafts:
+    {valid_drafts}
+    
+    Select the most natural, human-sounding, polished, and persuasive draft. Output ONLY the final revised message text, ensuring it signs off cleanly as Hasham, Founder of HESHI Salt and Spices. No extra commentary.
+    """
+    
+    final_response = gemini_model.generate_content(arena_judge_prompt)
+    return final_response.text.strip()
 
 def run_linkedin_outreach(profile_urls):
     with sync_playwright() as p:
@@ -69,7 +124,7 @@ def run_linkedin_outreach(profile_urls):
         else:
             print("Existing session loaded successfully! Skipping login.")
         
-        print("Starting professional research & outreach sequence...")
+        print("Starting professional Arena team outreach sequence...")
         
         for url in profile_urls:
             try:
@@ -89,9 +144,9 @@ def run_linkedin_outreach(profile_urls):
                 
                 print(f" -> Extracted Profile: {name} | {headline}")
                 
-                # You can specify "gemini", "claude", or "qwen" here!
-                custom_pitch = generate_multi_model_pitch(name, headline, model_choice="gemini")
-                print(f" -> Generated Pitch:\n{custom_pitch}\n")
+                # Run the multi-model Arena team consensus
+                custom_pitch = generate_arena_team_pitch(name, headline)
+                print(f" -> Winning Arena Pitch:\n{custom_pitch}\n")
                 
                 message_btn = page.locator("button:has-text('Message')").first
                 if message_btn.is_visible():
