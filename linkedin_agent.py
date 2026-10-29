@@ -1,17 +1,21 @@
 import os
 import time
 import google.generativeai as genai
+# import anthropic  # Uncomment if using Anthropic/Claude SDK
 from playwright.sync_api import sync_playwright
 
-# Configure AI Models
+# Configure API Keys for Multiple Models
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY") # Optional for Claude
+QWEN_API_KEY = os.environ.get("QWEN_API_KEY")         # Optional for Qwen via OpenRouter/DashScope
+
 genai.configure(api_key=GEMINI_API_KEY)
 gemini_model = genai.GenerativeModel("gemini-3.8-flash")
 
-def generate_personalized_pitch(profile_name, profile_headline):
+def generate_multi_model_pitch(profile_name, profile_headline, model_choice="gemini"):
     """
-    Acts as Hasham, Founder of HESHI Salt and Spices.
-    Writes a deeply researched, human-like outreach pitch.
+    Generates a personalized B2B export pitch allowing you to switch 
+    between Gemini, Claude, or Qwen dynamically.
     """
     prompt = f"""
     You are Hasham, Founder of HESHI Salt and Spices, an export company specializing in certified, premium-grade Himalayan pink salt and pure bulk spices.
@@ -27,12 +31,27 @@ def generate_personalized_pitch(profile_name, profile_headline):
     - Sign off cleanly as Hasham, Founder of HESHI Salt and Spices.
     """
     
+    if model_choice == "gemini":
+        response = gemini_model.generate_content(prompt)
+        return response.text.strip()
+    
+    elif model_choice == "claude":
+        # Example integration for Claude (Anthropic SDK)
+        # client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        # message = client.messages.create(model="claude-3-5-sonnet-20241022", max_tokens=300, messages=[{"role": "user", "content": prompt}])
+        # return message.content[0].text.strip()
+        pass
+        
+    elif model_choice == "qwen":
+        # Example integration for Qwen (via OpenAI-compatible client or OpenRouter)
+        pass
+        
+    # Default fallback to Gemini
     response = gemini_model.generate_content(prompt)
     return response.text.strip()
 
 def run_linkedin_outreach(profile_urls):
     with sync_playwright() as p:
-        # Use a persistent user data directory so your login session & cookies are saved locally
         user_data_dir = os.path.join(os.getcwd(), "linkedin_session")
         context = p.chromium.launch_persistent_context(
             user_data_dir=user_data_dir,
@@ -41,7 +60,6 @@ def run_linkedin_outreach(profile_urls):
         )
         page = context.new_page()
         
-        # Check if already logged in or go to feed
         page.goto("https://www.linkedin.com/feed/", timeout=60000)
         
         if "login" in page.url or "checkpoint" in page.url:
@@ -59,7 +77,6 @@ def run_linkedin_outreach(profile_urls):
                 page.goto(url, timeout=60000)
                 time.sleep(4)
                 
-                # Scrape profile details for human-like personalization
                 try:
                     name = page.locator("h1.text-heading-xlarge").inner_text(timeout=3000).strip()
                 except:
@@ -72,11 +89,10 @@ def run_linkedin_outreach(profile_urls):
                 
                 print(f" -> Extracted Profile: {name} | {headline}")
                 
-                # Generate tailored pitch
-                custom_pitch = generate_personalized_pitch(name, headline)
+                # You can specify "gemini", "claude", or "qwen" here!
+                custom_pitch = generate_multi_model_pitch(name, headline, model_choice="gemini")
                 print(f" -> Generated Pitch:\n{custom_pitch}\n")
                 
-                # Action: Open message box
                 message_btn = page.locator("button:has-text('Message')").first
                 if message_btn.is_visible():
                     message_btn.click()
